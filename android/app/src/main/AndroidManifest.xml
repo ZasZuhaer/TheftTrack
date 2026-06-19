@@ -23,6 +23,9 @@
     <!-- Device admin -->
     <uses-permission android:name="android.permission.BIND_DEVICE_ADMIN" />
 
+    <!-- Push notifications (runtime on API 33+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <!-- Storage (only needed below API 29) -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />

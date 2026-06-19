@@ -133,6 +133,25 @@ class TheftTrackModule(private val reactContext: ReactApplicationContext) :
         promise.resolve(true)
     }
 
+    // ── Onboarding ────────────────────────────────────────────────────────────
+
+    @ReactMethod
+    fun isFirstLaunch(promise: Promise) {
+        promise.resolve(!prefs.getBoolean("onboarding_complete", false))
+    }
+
+    @ReactMethod
+    fun markOnboardingComplete(promise: Promise) {
+        prefs.edit().putBoolean("onboarding_complete", true).apply()
+        promise.resolve(true)
+    }
+
+    @ReactMethod
+    fun saveRecipientEmail(email: String, promise: Promise) {
+        prefs.edit().putString("recipient_email", email).apply()
+        promise.resolve(true)
+    }
+
     // ── Permissions ───────────────────────────────────────────────────────────
 
     @ReactMethod
