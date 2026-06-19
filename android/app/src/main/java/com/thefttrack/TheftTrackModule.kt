@@ -32,15 +32,15 @@ class TheftTrackModule(private val reactContext: ReactApplicationContext) :
 
     @ReactMethod
     fun requestDeviceAdmin() {
+        val activity = reactContext.currentActivity ?: return
         val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
             putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, adminComponent)
             putExtra(
                 DevicePolicyManager.EXTRA_ADD_EXPLANATION,
                 "TheftTrack needs Device Administrator access to detect failed unlock attempts and trigger intrusion capture."
             )
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
-        reactContext.startActivity(intent)
+        activity.startActivity(intent)
     }
 
     @ReactMethod
