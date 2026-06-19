@@ -14,6 +14,7 @@ import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
+import android.os.Looper
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.*
@@ -156,9 +157,17 @@ class IntrusionDetectionService : Service() {
                 return@suspendCoroutine
             }
 
-            locationManager.requestLocationUpdates(
-                LocationManager.NETWORK_PROVIDER, 0, 0f, listener
-            )
+            val mainLooper = Looper.getMainLooper()
+            if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                locationManager.requestLocationUpdates(
+                    LocationManager.GPS_PROVIDER, 0, 0f, listener, mainLooper
+                )
+            }
+            if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+                locationManager.requestLocationUpdates(
+                    LocationManager.NETWORK_PROVIDER, 0, 0f, listener, mainLooper
+                )
+            }
         } catch (e: Exception) {
             if (!resumed) { resumed = true; timeout.cancel(); cont.resume(null) }
         }
