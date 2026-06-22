@@ -6,11 +6,8 @@ import { SettingsEmailScreen } from '../screens/SettingsEmailScreen';
 import { SettingsFailedAttemptsScreen } from '../screens/SettingsFailedAttemptsScreen';
 import { SettingsPicturesScreen } from '../screens/SettingsPicturesScreen';
 import { SettingsDeviceAdminScreen } from '../screens/SettingsDeviceAdminScreen';
-import {
-  SettingsCameraPermScreen,
-  SettingsLocationPermScreen,
-  SettingsNotificationPermScreen,
-} from '../screens/SettingsPermScreens';
+import { SettingsManagePermissionsScreen } from '../screens/SettingsManagePermissionsScreen';
+import { SettingsAppLockScreen } from '../screens/SettingsAppLockScreen';
 
 const Stack = createNativeStackNavigator<SettingsStackParamList>();
 
@@ -29,9 +26,8 @@ export function SettingsNavigator() {
       <Stack.Screen name="FailedAttempts" component={SettingsFailedAttemptsScreen} options={{ title: 'Failed Attempts' }} />
       <Stack.Screen name="Pictures" component={SettingsPicturesScreen} options={{ title: 'Pictures' }} />
       <Stack.Screen name="DeviceAdmin" component={SettingsDeviceAdminScreen} options={{ title: 'Device Admin' }} />
-      <Stack.Screen name="CameraPermission" component={SettingsCameraPermScreen} options={{ title: 'Camera' }} />
-      <Stack.Screen name="LocationPermission" component={SettingsLocationPermScreen} options={{ title: 'Location' }} />
-      <Stack.Screen name="NotificationPermission" component={SettingsNotificationPermScreen} options={{ title: 'Notifications' }} />
+      <Stack.Screen name="ManagePermissions" component={SettingsManagePermissionsScreen} options={{ title: 'Manage Permissions' }} />
+      <Stack.Screen name="AppLock" component={SettingsAppLockScreen} options={{ title: 'App Lock' }} />
     </Stack.Navigator>
   );
 }

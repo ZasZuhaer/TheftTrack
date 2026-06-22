@@ -1,8 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import {
   AppState,
-  PermissionsAndroid,
-  Platform,
   ScrollView,
   StyleSheet,
   Switch,
@@ -17,35 +15,22 @@ import type { SettingsStackParamList } from '../types';
 
 type Nav = NativeStackNavigationProp<SettingsStackParamList, 'SettingsList'>;
 
-const NEEDS_NOTIF = Platform.OS === 'android' && (Platform.Version as number) >= 33;
-
 export function SettingsScreen() {
   const navigation = useNavigation<Nav>();
-  const [adminActive, setAdminActive] = useState(false);
-  const [cameraGranted, setCameraGranted] = useState(false);
-  const [locationGranted, setLocationGranted] = useState(false);
-  const [notifGranted, setNotifGranted] = useState(true);
   const [locationEnabled, setLocationEnabledState] = useState(true);
   const [threshold, setThreshold] = useState(3);
   const [recipient, setRecipient] = useState('');
+  const [appLockEnabled, setAppLockEnabled] = useState(false);
 
   const load = useCallback(async () => {
-    const [admin, settings, camera, location, notif] = await Promise.all([
-      TheftTrack.isDeviceAdminActive(),
+    const [settings, appLock] = await Promise.all([
       TheftTrack.getSettings(),
-      PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.CAMERA),
-      PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION),
-      NEEDS_NOTIF
-        ? PermissionsAndroid.check('android.permission.POST_NOTIFICATIONS' as any)
-        : Promise.resolve(true),
+      TheftTrack.getAppLock(),
     ]);
-    setAdminActive(admin);
     setLocationEnabledState(settings.locationEnabled);
     setThreshold(settings.threshold);
     setRecipient(settings.recipient);
-    setCameraGranted(camera);
-    setLocationGranted(location);
-    setNotifGranted(notif as boolean);
+    setAppLockEnabled(appLock.enabled);
   }, []);
 
   useFocusEffect(
@@ -87,34 +72,19 @@ export function SettingsScreen() {
         />
       </View>
 
-      <SectionHeader title="Permissions" />
+      <SectionHeader title="Advanced" />
       <View style={styles.card}>
         <Row
-          title="Device Admin"
-          description={adminActive ? 'Active' : 'Not granted'}
-          descriptionColor={adminActive ? '#4CAF50' : '#F44336'}
-          onPress={() => navigation.navigate('DeviceAdmin')}
+          title="Manage Permissions"
+          description="Device Admin, Camera, Location & more"
+          onPress={() => navigation.navigate('ManagePermissions')}
         />
         <Separator />
         <Row
-          title="Camera"
-          description={cameraGranted ? 'Granted' : 'Not granted'}
-          descriptionColor={cameraGranted ? '#4CAF50' : '#F44336'}
-          onPress={() => navigation.navigate('CameraPermission')}
-        />
-        <Separator />
-        <Row
-          title="Location"
-          description={locationGranted ? 'Granted' : 'Not granted'}
-          descriptionColor={locationGranted ? '#4CAF50' : '#F44336'}
-          onPress={() => navigation.navigate('LocationPermission')}
-        />
-        <Separator />
-        <Row
-          title="Notifications"
-          description={notifGranted ? 'Granted' : 'Not granted'}
-          descriptionColor={notifGranted ? '#4CAF50' : '#F44336'}
-          onPress={() => navigation.navigate('NotificationPermission')}
+          title="App Lock"
+          description={appLockEnabled ? 'Enabled' : 'Disabled'}
+          descriptionColor={appLockEnabled ? '#4CAF50' : '#888'}
+          onPress={() => navigation.navigate('AppLock')}
         />
       </View>
     </ScrollView>

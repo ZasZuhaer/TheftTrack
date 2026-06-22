@@ -1,5 +1,5 @@
 import { NativeModules } from 'react-native';
-import type { AppSettings, IntrusionLog } from '../types';
+import type { AppLock, AppSettings, IntrusionLog } from '../types';
 
 const mod = NativeModules.TheftTrackModule;
 
@@ -33,6 +33,12 @@ export const TheftTrack = {
 
   setLocationEnabled: (enabled: boolean): Promise<boolean> =>
     call(() => mod.setLocationEnabled(enabled), false),
+
+  getAppLock: (): Promise<AppLock> =>
+    call(() => mod.getAppLock(), { enabled: false, pin: '' }),
+
+  setAppLock: (enabled: boolean, pin: string): Promise<boolean> =>
+    call(() => mod.setAppLock(enabled, pin), false),
 
   saveSettings: (
     email: string,

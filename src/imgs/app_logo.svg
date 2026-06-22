@@ -1,0 +1,35 @@
+<svg width="320" height="320" viewBox="180 60 320 320" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>TheftTrack app icon</title>
+<desc>A rounded-square app icon in medium light blue with a centered squared smartphone; a location pin on its screen holds a masked thief avatar centered within the pin's inner circle, surrounded by tracking signal rings.</desc>
+<defs>
+<linearGradient id="blueBg" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#6FB6F0"/>
+<stop offset="1" stop-color="#3F8BDC"/>
+</linearGradient>
+<clipPath id="iconClip">
+<rect x="180" y="60" width="320" height="320" rx="78"/>
+</clipPath>
+</defs>
+
+<rect x="180" y="60" width="320" height="320" rx="78" fill="url(#blueBg)"/>
+
+<g clip-path="url(#iconClip)">
+<circle cx="340" cy="220" r="120" fill="none" stroke="#FFFFFF" stroke-width="6" opacity="0.14"/>
+<circle cx="340" cy="220" r="158" fill="none" stroke="#FFFFFF" stroke-width="5" opacity="0.09"/>
+<circle cx="340" cy="220" r="196" fill="none" stroke="#FFFFFF" stroke-width="4" opacity="0.06"/>
+</g>
+
+<rect x="262" y="104" width="156" height="232" rx="16" fill="#FFFFFF"/>
+<rect x="326" y="118" width="28" height="5" rx="2.5" fill="#9CC7EE"/>
+<rect x="276" y="136" width="128" height="176" rx="8" fill="#3F8BDC"/>
+<rect x="326" y="320" width="28" height="5" rx="2.5" fill="#CFE3F7"/>
+
+<path d="M340 282 C316 242 300 224 300 198 A40 40 0 1 1 380 198 C380 224 364 242 340 282 Z" fill="#FFFFFF"/>
+
+<circle cx="340" cy="198" r="32" fill="#2E6FB3"/>
+<circle cx="340" cy="198" r="20" fill="#FFFFFF"/>
+<path d="M322.14 189 A20 20 0 0 1 357.86 189 Q340 193 322.14 189 Z" fill="#14406B"/>
+<rect x="319" y="194" width="42" height="12" rx="6" fill="#14406B"/>
+<circle cx="331" cy="200" r="2.6" fill="#FFFFFF"/>
+<circle cx="349" cy="200" r="2.6" fill="#FFFFFF"/>
+</svg>

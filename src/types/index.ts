@@ -19,13 +19,17 @@ export interface AppSettings {
   locationEnabled: boolean;
 }
 
+export interface AppLock {
+  enabled: boolean;
+  pin: string;
+}
+
 export type SettingsStackParamList = {
   SettingsList: undefined;
   Email: undefined;
   FailedAttempts: undefined;
   Pictures: undefined;
   DeviceAdmin: undefined;
-  CameraPermission: undefined;
-  LocationPermission: undefined;
-  NotificationPermission: undefined;
+  ManagePermissions: undefined;
+  AppLock: undefined;
 };

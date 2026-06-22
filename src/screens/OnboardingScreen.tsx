@@ -59,7 +59,7 @@ export function OnboardingScreen({ onComplete }: Props) {
     const result = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.CAMERA, {
       title: 'Camera Permission',
       message: 'TheftTrack needs camera access to silently photograph intruders.',
-      buttonPositive: 'Grant',
+      buttonPositive: 'Allow',
       buttonNegative: 'Deny',
     });
     setPerms(p => ({ ...p, camera: result === PermissionsAndroid.RESULTS.GRANTED ? 'granted' : 'denied' }));
@@ -69,7 +69,7 @@ export function OnboardingScreen({ onComplete }: Props) {
     const result = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION, {
       title: 'Location Permission',
       message: 'TheftTrack needs location access to record where an intrusion happened.',
-      buttonPositive: 'Grant',
+      buttonPositive: 'Allow',
       buttonNegative: 'Deny',
     });
     setPerms(p => ({ ...p, location: result === PermissionsAndroid.RESULTS.GRANTED ? 'granted' : 'denied' }));
@@ -80,7 +80,7 @@ export function OnboardingScreen({ onComplete }: Props) {
     const result = await PermissionsAndroid.request('android.permission.POST_NOTIFICATIONS' as any, {
       title: 'Notification Permission',
       message: 'TheftTrack needs notification access to alert you of intrusion events.',
-      buttonPositive: 'Grant',
+      buttonPositive: 'Allow',
       buttonNegative: 'Deny',
     });
     setPerms(p => ({ ...p, notification: result === PermissionsAndroid.RESULTS.GRANTED ? 'granted' : 'denied' }));
@@ -231,7 +231,7 @@ function PermRow({
         </View>
       ) : (
         <TouchableOpacity style={styles.grantBtn} onPress={onGrant}>
-          <Text style={styles.grantBtnText}>Grant</Text>
+          <Text style={styles.grantBtnText}>Allow</Text>
         </TouchableOpacity>
       )}
     </View>

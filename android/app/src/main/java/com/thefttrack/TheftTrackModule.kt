@@ -89,6 +89,24 @@ class TheftTrackModule(private val reactContext: ReactApplicationContext) :
         promise.resolve(true)
     }
 
+    @ReactMethod
+    fun getAppLock(promise: Promise) {
+        val map = Arguments.createMap().apply {
+            putBoolean("enabled", prefs.getBoolean("app_lock_enabled", false))
+            putString("pin", prefs.getString("app_lock_pin", "") ?: "")
+        }
+        promise.resolve(map)
+    }
+
+    @ReactMethod
+    fun setAppLock(enabled: Boolean, pin: String, promise: Promise) {
+        prefs.edit()
+            .putBoolean("app_lock_enabled", enabled)
+            .putString("app_lock_pin", pin)
+            .apply()
+        promise.resolve(true)
+    }
+
     // ── Logs ──────────────────────────────────────────────────────────────────
 
     @ReactMethod
