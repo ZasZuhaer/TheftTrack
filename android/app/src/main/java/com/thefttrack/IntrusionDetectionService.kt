@@ -49,13 +49,16 @@ class IntrusionDetectionService : Service() {
     }
 
     private suspend fun runCapture(failedAttempts: Int, isTest: Boolean) {
+        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val locationEnabled = prefs.getBoolean("location_enabled", true)
+
         val camera = CameraCapture(this)
 
         val frontFile = try { camera.captureFront() } catch (e: Exception) { null }
         delay(500)
         val backFile = try { camera.captureBack() } catch (e: Exception) { null }
 
-        val location = tryGetLocation()
+        val location = if (locationEnabled) tryGetLocation() else null
 
         val id = UUID.randomUUID().toString()
         val timestamp = System.currentTimeMillis()
@@ -74,7 +77,6 @@ class IntrusionDetectionService : Service() {
 
         appendLog(log)
 
-        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val fromEmail = prefs.getString(KEY_EMAIL, "") ?: ""
         val appPassword = prefs.getString(KEY_PASSWORD, "") ?: ""
         val toEmail = prefs.getString(KEY_RECIPIENT, "") ?: ""

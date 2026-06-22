@@ -1,0 +1,37 @@
+import React from 'react';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import type { SettingsStackParamList } from '../types';
+import { SettingsScreen } from '../screens/SettingsScreen';
+import { SettingsEmailScreen } from '../screens/SettingsEmailScreen';
+import { SettingsFailedAttemptsScreen } from '../screens/SettingsFailedAttemptsScreen';
+import { SettingsPicturesScreen } from '../screens/SettingsPicturesScreen';
+import { SettingsDeviceAdminScreen } from '../screens/SettingsDeviceAdminScreen';
+import {
+  SettingsCameraPermScreen,
+  SettingsLocationPermScreen,
+  SettingsNotificationPermScreen,
+} from '../screens/SettingsPermScreens';
+
+const Stack = createNativeStackNavigator<SettingsStackParamList>();
+
+const HEADER = {
+  headerStyle: { backgroundColor: '#1A1A1A' },
+  headerTintColor: '#fff',
+  headerTitleStyle: { fontWeight: '700' as const, fontSize: 18 },
+  contentStyle: { backgroundColor: '#121212' },
+};
+
+export function SettingsNavigator() {
+  return (
+    <Stack.Navigator screenOptions={HEADER}>
+      <Stack.Screen name="SettingsList" component={SettingsScreen} options={{ title: 'Settings' }} />
+      <Stack.Screen name="Email" component={SettingsEmailScreen} options={{ title: 'Email' }} />
+      <Stack.Screen name="FailedAttempts" component={SettingsFailedAttemptsScreen} options={{ title: 'Failed Attempts' }} />
+      <Stack.Screen name="Pictures" component={SettingsPicturesScreen} options={{ title: 'Pictures' }} />
+      <Stack.Screen name="DeviceAdmin" component={SettingsDeviceAdminScreen} options={{ title: 'Device Admin' }} />
+      <Stack.Screen name="CameraPermission" component={SettingsCameraPermScreen} options={{ title: 'Camera' }} />
+      <Stack.Screen name="LocationPermission" component={SettingsLocationPermScreen} options={{ title: 'Location' }} />
+      <Stack.Screen name="NotificationPermission" component={SettingsNotificationPermScreen} options={{ title: 'Notifications' }} />
+    </Stack.Navigator>
+  );
+}

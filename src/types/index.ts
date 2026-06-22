@@ -16,4 +16,16 @@ export interface AppSettings {
   recipient: string;
   threshold: number;
   enabled: boolean;
+  locationEnabled: boolean;
 }
+
+export type SettingsStackParamList = {
+  SettingsList: undefined;
+  Email: undefined;
+  FailedAttempts: undefined;
+  Pictures: undefined;
+  DeviceAdmin: undefined;
+  CameraPermission: undefined;
+  LocationPermission: undefined;
+  NotificationPermission: undefined;
+};

@@ -59,6 +59,7 @@ class TheftTrackModule(private val reactContext: ReactApplicationContext) :
             putString("recipient", prefs.getString("recipient_email", "") ?: "")
             putInt("threshold", prefs.getInt("threshold", 3))
             putBoolean("enabled", prefs.getBoolean("enabled", false))
+            putBoolean("locationEnabled", prefs.getBoolean("location_enabled", true))
         }
         promise.resolve(map)
     }
@@ -79,6 +80,12 @@ class TheftTrackModule(private val reactContext: ReactApplicationContext) :
             .putInt("threshold", threshold)
             .putBoolean("enabled", enabled)
             .apply()
+        promise.resolve(true)
+    }
+
+    @ReactMethod
+    fun setLocationEnabled(enabled: Boolean, promise: Promise) {
+        prefs.edit().putBoolean("location_enabled", enabled).apply()
         promise.resolve(true)
     }
 

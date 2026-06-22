@@ -187,19 +187,6 @@ export function HomeScreen() {
             <Text style={styles.grantBtnText}>Grant Device Admin</Text>
           </TouchableOpacity>
         )}
-        {adminActive && (
-          <TouchableOpacity
-            style={[styles.grantBtn, styles.grantBtnDanger]}
-            onPress={() =>
-              Alert.alert('Remove Device Admin', 'This will disable protection. Continue?', [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'Remove', style: 'destructive', onPress: async () => { await TheftTrack.removeDeviceAdmin(); load(); } },
-              ])
-            }
-          >
-            <Text style={styles.grantBtnText}>Remove Device Admin</Text>
-          </TouchableOpacity>
-        )}
       </View>
 
       {/* Permissions — only shown when something is missing */}
@@ -304,7 +291,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10, paddingHorizontal: 16,
     alignItems: 'center', marginTop: 4,
   },
-  grantBtnDanger: { backgroundColor: '#B71C1C' },
+
   grantBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
   permRow: {
     flexDirection: 'row', alignItems: 'center',

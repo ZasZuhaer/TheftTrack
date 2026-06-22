@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text } from 'react-native';
 import { HomeScreen } from '../screens/HomeScreen';
 import { LogsScreen } from '../screens/LogsScreen';
-import { SettingsScreen } from '../screens/SettingsScreen';
+import { SettingsNavigator } from './SettingsNavigator';
 
 const Tab = createBottomTabNavigator();
 
@@ -46,9 +46,9 @@ export function AppNavigator() {
       />
       <Tab.Screen
         name="Settings"
-        component={SettingsScreen}
+        component={SettingsNavigator}
         options={{
-          title: 'Settings',
+          headerShown: false,
           tabBarLabel: 'Settings',
           tabBarIcon: ({ focused }) => <TabIcon icon="⚙️" focused={focused} />,
         }}
