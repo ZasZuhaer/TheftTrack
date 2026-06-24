@@ -28,7 +28,7 @@ export const TheftTrack = {
 
   getSettings: (): Promise<AppSettings> =>
     call(() => mod.getSettings(), {
-      email: '', password: '', recipient: '', threshold: 3, enabled: false, locationEnabled: true,
+      email: '', password: '', recipient: '', threshold: 3, enabled: false, locationEnabled: false,
     }),
 
   setLocationEnabled: (enabled: boolean): Promise<boolean> =>

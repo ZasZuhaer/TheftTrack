@@ -1,6 +1,8 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
+  Alert,
   AppState,
+  PermissionsAndroid,
   ScrollView,
   StyleSheet,
   Switch,
@@ -17,17 +19,39 @@ type Nav = NativeStackNavigationProp<SettingsStackParamList, 'SettingsList'>;
 
 export function SettingsScreen() {
   const navigation = useNavigation<Nav>();
-  const [locationEnabled, setLocationEnabledState] = useState(true);
+  const [locationEnabled, setLocationEnabledState] = useState(false);
   const [threshold, setThreshold] = useState(3);
   const [recipient, setRecipient] = useState('');
   const [appLockEnabled, setAppLockEnabled] = useState(false);
 
+  // Each load() call gets a sequence number. If a newer load() starts before
+  // an older one resolves, the older result is discarded. This prevents an
+  // AppState-triggered reload from overwriting an in-progress user action.
+  const loadEpoch = useRef(0);
+
   const load = useCallback(async () => {
+    const epoch = ++loadEpoch.current;
     const [settings, appLock] = await Promise.all([
       TheftTrack.getSettings(),
       TheftTrack.getAppLock(),
     ]);
-    setLocationEnabledState(settings.locationEnabled);
+    if (epoch !== loadEpoch.current) return;
+
+    let locationEnabled = settings.locationEnabled;
+    if (locationEnabled) {
+      // Verify the OS permission is still granted. If the user revoked it from
+      // system settings, sync the stored value back to false automatically.
+      const permStillGranted = await PermissionsAndroid.check(
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+      );
+      if (!permStillGranted) {
+        locationEnabled = false;
+        TheftTrack.setLocationEnabled(false);
+      }
+    }
+
+    if (epoch !== loadEpoch.current) return;
+    setLocationEnabledState(locationEnabled);
     setThreshold(settings.threshold);
     setRecipient(settings.recipient);
     setAppLockEnabled(appLock.enabled);
@@ -44,8 +68,55 @@ export function SettingsScreen() {
   );
 
   const toggleLocation = async (val: boolean) => {
-    setLocationEnabledState(val);
-    await TheftTrack.setLocationEnabled(val);
+    if (!val) {
+      await TheftTrack.setLocationEnabled(false);
+      setLocationEnabledState(false);
+      return;
+    }
+
+    const alreadyGranted = await PermissionsAndroid.check(
+      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+    );
+
+    if (alreadyGranted) {
+      await TheftTrack.setLocationEnabled(true);
+      setLocationEnabledState(true);
+      return;
+    }
+
+    // Permission not granted — ask before enabling tracking
+    Alert.alert(
+      'Location Permission Required',
+      'Location tracking needs access to your device location. Please allow the permission to enable this feature.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+          onPress: () => setLocationEnabledState(false),
+        },
+        {
+          text: 'Allow',
+          onPress: async () => {
+            const result = await PermissionsAndroid.request(
+              PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+              {
+                title: 'Location Permission',
+                message: 'TheftTrack needs location access to record where an intrusion happened.',
+                buttonPositive: 'Allow',
+                buttonNegative: 'Deny',
+              }
+            );
+            if (result === PermissionsAndroid.RESULTS.GRANTED) {
+              await TheftTrack.setLocationEnabled(true);
+            }
+            // load() advances the epoch, discarding any AppState-triggered load
+            // that raced while the OS dialog was open. Storage is already updated
+            // above so this read reflects the correct final state.
+            load();
+          },
+        },
+      ]
+    );
   };
 
   const thresholdDesc = `Trigger after ${threshold} failed attempt${threshold !== 1 ? 's' : ''}`;
@@ -75,16 +146,16 @@ export function SettingsScreen() {
       <SectionHeader title="Advanced" />
       <View style={styles.card}>
         <Row
-          title="Manage Permissions"
-          description="Device Admin, Camera, Location & more"
-          onPress={() => navigation.navigate('ManagePermissions')}
-        />
-        <Separator />
-        <Row
           title="App Lock"
           description={appLockEnabled ? 'Enabled' : 'Disabled'}
           descriptionColor={appLockEnabled ? '#4CAF50' : '#888'}
           onPress={() => navigation.navigate('AppLock')}
+        />
+        <Separator />
+        <Row
+          title="Permissions"
+          description="Device Admin, Camera, Location & more"
+          onPress={() => navigation.navigate('ManagePermissions')}
         />
       </View>
     </ScrollView>
