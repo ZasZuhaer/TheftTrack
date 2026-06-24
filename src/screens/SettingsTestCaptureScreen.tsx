@@ -32,7 +32,7 @@ export function SettingsTestCaptureScreen() {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>What gets captured</Text>
         <Text style={styles.info}>
-          {'• Front-facing camera photo\n• Rear camera photo\n• GPS coordinates (if location is enabled)'}
+          {'• Front camera photo\n• Rear camera photo\n• GPS coordinates (if enabled)\n• Front camera video (if enabled)'}
         </Text>
       </View>
 
