@@ -1,10 +1,11 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   FlatList,
   Image,
   Linking,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -18,17 +19,49 @@ function formatDate(ts: number): string {
   return d.toLocaleString();
 }
 
+const PHOTO_STEP = 130; // 120px width + 10px gap
+
 function LogCard({ log }: { log: IntrusionLog }) {
   const [expanded, setExpanded] = useState(false);
   const hasLocation = log.latitude !== 0 || log.longitude !== 0;
+  const totalPhotos = log.frontPhotos.length + log.backPhotos.length;
+
+  const scrollRef = useRef<ScrollView>(null);
+  const scrollX = useRef(0);
+  const containerW = useRef(0);
+  const contentW = useRef(0);
+  const [showLeft, setShowLeft] = useState(false);
+  const [showRight, setShowRight] = useState(totalPhotos > 1);
+
+  const updateArrows = (x: number) => {
+    setShowLeft(x > 1);
+    setShowRight(x + containerW.current < contentW.current - 1);
+  };
+
+  useEffect(() => {
+    if (!expanded) {
+      scrollX.current = 0;
+      setShowLeft(false);
+      setShowRight(totalPhotos > 1);
+    }
+  }, [expanded, totalPhotos]);
+
+  const pressLeft = () => {
+    const next = Math.max(0, scrollX.current - PHOTO_STEP);
+    scrollRef.current?.scrollTo({ x: next, animated: true });
+  };
+
+  const pressRight = () => {
+    scrollRef.current?.scrollTo({ x: scrollX.current + PHOTO_STEP, animated: true });
+  };
 
   return (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => setExpanded(e => !e)}
-      activeOpacity={0.85}
-    >
-      <View style={styles.cardHeader}>
+    <View style={styles.card}>
+      <TouchableOpacity
+        style={styles.cardHeader}
+        onPress={() => setExpanded(e => !e)}
+        activeOpacity={0.85}
+      >
         <View>
           <Text style={styles.cardDate}>{formatDate(log.timestamp)}</Text>
           <Text style={styles.cardAttempts}>
@@ -48,36 +81,71 @@ function LogCard({ log }: { log: IntrusionLog }) {
           )}
           <Text style={styles.chevron}>{expanded ? '▲' : '▼'}</Text>
         </View>
-      </View>
+      </TouchableOpacity>
 
       {expanded && (
         <View style={styles.expanded}>
           {/* Photos */}
-          <View style={styles.photoRow}>
-            {!!log.frontPhoto && (
-              <View style={styles.photoContainer}>
-                <Image
-                  source={{ uri: `file://${log.frontPhoto}` }}
-                  style={styles.photo}
-                  resizeMode="cover"
-                />
-                <Text style={styles.photoLabel}>Front Camera</Text>
-              </View>
-            )}
-            {!!log.backPhoto && (
-              <View style={styles.photoContainer}>
-                <Image
-                  source={{ uri: `file://${log.backPhoto}` }}
-                  style={styles.photo}
-                  resizeMode="cover"
-                />
-                <Text style={styles.photoLabel}>Back Camera</Text>
-              </View>
-            )}
-            {!log.frontPhoto && !log.backPhoto && (
-              <Text style={styles.noPhoto}>No photos captured</Text>
-            )}
-          </View>
+          {log.frontPhotos.length === 0 && log.backPhotos.length === 0 ? (
+            <Text style={[styles.noPhoto, { marginBottom: 12 }]}>No photos captured</Text>
+          ) : (
+            <View style={styles.photoScrollWrapper}>
+              <ScrollView
+                ref={scrollRef}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                scrollEventThrottle={16}
+                contentContainerStyle={styles.photoScrollContent}
+                onScroll={e => {
+                  scrollX.current = e.nativeEvent.contentOffset.x;
+                  updateArrows(scrollX.current);
+                }}
+                onLayout={e => {
+                  containerW.current = e.nativeEvent.layout.width;
+                  updateArrows(scrollX.current);
+                }}
+                onContentSizeChange={w => {
+                  contentW.current = w;
+                  updateArrows(scrollX.current);
+                }}
+              >
+                {log.frontPhotos.map((path, i) => (
+                  <View key={`front_${i}`} style={styles.photoContainer}>
+                    <Image
+                      source={{ uri: `file://${path}` }}
+                      style={styles.photo}
+                      resizeMode="cover"
+                    />
+                    <Text style={styles.photoLabel}>
+                      Front{log.frontPhotos.length > 1 ? ` ${i + 1}` : ''}
+                    </Text>
+                  </View>
+                ))}
+                {log.backPhotos.map((path, i) => (
+                  <View key={`back_${i}`} style={styles.photoContainer}>
+                    <Image
+                      source={{ uri: `file://${path}` }}
+                      style={styles.photo}
+                      resizeMode="cover"
+                    />
+                    <Text style={styles.photoLabel}>
+                      Back{log.backPhotos.length > 1 ? ` ${i + 1}` : ''}
+                    </Text>
+                  </View>
+                ))}
+              </ScrollView>
+              {showLeft && (
+                <TouchableOpacity style={[styles.scrollBtn, styles.scrollBtnLeft]} onPress={pressLeft}>
+                  <Text style={styles.scrollBtnText}>‹</Text>
+                </TouchableOpacity>
+              )}
+              {showRight && (
+                <TouchableOpacity style={[styles.scrollBtn, styles.scrollBtnRight]} onPress={pressRight}>
+                  <Text style={styles.scrollBtnText}>›</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
 
           {/* Location */}
           {hasLocation ? (
@@ -99,7 +167,7 @@ function LogCard({ log }: { log: IntrusionLog }) {
           )}
         </View>
       )}
-    </TouchableOpacity>
+    </View>
   );
 }
 
@@ -202,9 +270,23 @@ const styles = StyleSheet.create({
   badgeText: { color: '#fff', fontSize: 10, fontWeight: '600' },
   chevron: { color: '#666', marginLeft: 8 },
   expanded: { marginTop: 12, borderTopWidth: 1, borderTopColor: '#333', paddingTop: 12 },
-  photoRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
-  photoContainer: { flex: 1, alignItems: 'center' },
-  photo: { width: '100%', aspectRatio: 1, borderRadius: 8, backgroundColor: '#333' },
+  photoScrollWrapper: { marginBottom: 12 },
+  photoScrollContent: { gap: 10, paddingHorizontal: 2 },
+  scrollBtn: {
+    position: 'absolute',
+    top: 46,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scrollBtnLeft: { left: 4 },
+  scrollBtnRight: { right: 4 },
+  scrollBtnText: { color: '#fff', fontSize: 20, lineHeight: 22, marginTop: -1 },
+  photoContainer: { width: 120, alignItems: 'center' },
+  photo: { width: 120, height: 120, borderRadius: 8, backgroundColor: '#333' },
   photoLabel: { color: '#888', fontSize: 11, marginTop: 4 },
   noPhoto: { color: '#666', fontSize: 13 },
   locationBtn: {

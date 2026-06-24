@@ -68,8 +68,8 @@ class IntrusionDetectionService : Service() {
         val log = JSONObject().apply {
             put("id", id)
             put("timestamp", timestamp)
-            put("frontPhoto", frontFiles.firstOrNull()?.absolutePath ?: "")
-            put("backPhoto",  backFiles.firstOrNull()?.absolutePath  ?: "")
+            put("frontPhotos", JSONArray().also { arr -> frontFiles.forEach { arr.put(it.absolutePath) } })
+            put("backPhotos",  JSONArray().also { arr -> backFiles.forEach  { arr.put(it.absolutePath) } })
             put("latitude",  location?.latitude  ?: 0.0)
             put("longitude", location?.longitude ?: 0.0)
             put("address", "")

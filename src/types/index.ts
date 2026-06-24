@@ -1,8 +1,8 @@
 export interface IntrusionLog {
   id: string;
   timestamp: number;
-  frontPhoto: string;
-  backPhoto: string;
+  frontPhotos: string[];
+  backPhotos: string[];
   latitude: number;
   longitude: number;
   address: string;

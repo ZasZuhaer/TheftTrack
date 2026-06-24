@@ -129,11 +129,23 @@ class TheftTrackModule(private val reactContext: ReactApplicationContext) :
             val result = Arguments.createArray()
             for (i in 0 until jsonArray.length()) {
                 val obj = jsonArray.getJSONObject(i)
+                val rawFront = obj.optJSONArray("frontPhotos")
+                    ?: obj.optString("frontPhoto").takeIf { it.isNotEmpty() }
+                        ?.let { s -> JSONArray().apply { put(s) } }
+                    ?: JSONArray()
+                val rawBack = obj.optJSONArray("backPhotos")
+                    ?: obj.optString("backPhoto").takeIf { it.isNotEmpty() }
+                        ?.let { s -> JSONArray().apply { put(s) } }
+                    ?: JSONArray()
                 result.pushMap(Arguments.createMap().apply {
                     putString("id", obj.optString("id"))
                     putDouble("timestamp", obj.optDouble("timestamp"))
-                    putString("frontPhoto", obj.optString("frontPhoto"))
-                    putString("backPhoto", obj.optString("backPhoto"))
+                    putArray("frontPhotos", Arguments.createArray().also { a ->
+                        for (j in 0 until rawFront.length()) a.pushString(rawFront.optString(j))
+                    })
+                    putArray("backPhotos", Arguments.createArray().also { a ->
+                        for (j in 0 until rawBack.length()) a.pushString(rawBack.optString(j))
+                    })
                     putDouble("latitude", obj.optDouble("latitude"))
                     putDouble("longitude", obj.optDouble("longitude"))
                     putString("address", obj.optString("address"))
