@@ -28,11 +28,15 @@ export const TheftTrack = {
 
   getSettings: (): Promise<AppSettings> =>
     call(() => mod.getSettings(), {
-      email: '', password: '', recipient: '', threshold: 3, enabled: false, locationEnabled: false,
+      email: '', password: '', recipient: '', threshold: 3, enabled: false,
+      locationEnabled: false, frontShots: 1, backShots: 1, watermarkEnabled: true,
     }),
 
   setLocationEnabled: (enabled: boolean): Promise<boolean> =>
     call(() => mod.setLocationEnabled(enabled), false),
+
+  savePictureSettings: (frontShots: number, backShots: number, watermarkEnabled: boolean): Promise<boolean> =>
+    call(() => mod.savePictureSettings(frontShots, backShots, watermarkEnabled), false),
 
   getAppLock: (): Promise<AppLock> =>
     call(() => mod.getAppLock(), { enabled: false, pin: '' }),

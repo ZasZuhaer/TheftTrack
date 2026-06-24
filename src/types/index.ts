@@ -17,6 +17,9 @@ export interface AppSettings {
   threshold: number;
   enabled: boolean;
   locationEnabled: boolean;
+  frontShots: number;
+  backShots: number;
+  watermarkEnabled: boolean;
 }
 
 export interface AppLock {
@@ -32,4 +35,5 @@ export type SettingsStackParamList = {
   DeviceAdmin: undefined;
   ManagePermissions: undefined;
   AppLock: undefined;
+  TestCapture: undefined;
 };

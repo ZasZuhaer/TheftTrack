@@ -60,8 +60,21 @@ class TheftTrackModule(private val reactContext: ReactApplicationContext) :
             putInt("threshold", prefs.getInt("threshold", 3))
             putBoolean("enabled", prefs.getBoolean("enabled", false))
             putBoolean("locationEnabled", prefs.getBoolean("location_enabled", false))
+            putInt("frontShots", prefs.getInt("front_shots", 1))
+            putInt("backShots", prefs.getInt("back_shots", 1))
+            putBoolean("watermarkEnabled", prefs.getBoolean("watermark_enabled", true))
         }
         promise.resolve(map)
+    }
+
+    @ReactMethod
+    fun savePictureSettings(frontShots: Int, backShots: Int, watermarkEnabled: Boolean, promise: Promise) {
+        prefs.edit()
+            .putInt("front_shots", frontShots.coerceIn(1, 5))
+            .putInt("back_shots", backShots.coerceIn(1, 5))
+            .putBoolean("watermark_enabled", watermarkEnabled)
+            .apply()
+        promise.resolve(true)
     }
 
     @ReactMethod

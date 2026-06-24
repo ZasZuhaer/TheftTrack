@@ -133,7 +133,7 @@ export function SettingsScreen() {
 
       <SectionHeader title="Actions" />
       <View style={styles.card}>
-        <Row title="Pictures" description="Test capture and verify" onPress={() => navigation.navigate('Pictures')} />
+        <Row title="Pictures" description="Camera shots and watermark" onPress={() => navigation.navigate('Pictures')} />
         <Separator />
         <ToggleRow
           title="Location"
@@ -150,6 +150,12 @@ export function SettingsScreen() {
           description={appLockEnabled ? 'Enabled' : 'Disabled'}
           descriptionColor={appLockEnabled ? '#4CAF50' : '#888'}
           onPress={() => navigation.navigate('AppLock')}
+        />
+        <Separator />
+        <Row
+          title="Test Capture"
+          description="Manually trigger a capture to verify setup"
+          onPress={() => navigation.navigate('TestCapture')}
         />
         <Separator />
         <Row

@@ -50,13 +50,15 @@ class IntrusionDetectionService : Service() {
 
     private suspend fun runCapture(failedAttempts: Int, isTest: Boolean) {
         val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val locationEnabled = prefs.getBoolean("location_enabled", true)
+        val locationEnabled  = prefs.getBoolean("location_enabled", false)
+        val frontShots       = prefs.getInt("front_shots", 1).coerceIn(1, 5)
+        val backShots        = prefs.getInt("back_shots", 1).coerceIn(1, 5)
+        val watermarkEnabled = prefs.getBoolean("watermark_enabled", true)
 
         val camera = CameraCapture(this)
-
-        val frontFile = try { camera.captureFront() } catch (e: Exception) { null }
+        val frontFiles = try { camera.captureMultipleFront(frontShots, watermarkEnabled) } catch (e: Exception) { emptyList() }
         delay(500)
-        val backFile = try { camera.captureBack() } catch (e: Exception) { null }
+        val backFiles  = try { camera.captureMultipleBack(backShots, watermarkEnabled) } catch (e: Exception) { emptyList() }
 
         val location = if (locationEnabled) tryGetLocation() else null
 
@@ -66,9 +68,9 @@ class IntrusionDetectionService : Service() {
         val log = JSONObject().apply {
             put("id", id)
             put("timestamp", timestamp)
-            put("frontPhoto", frontFile?.absolutePath ?: "")
-            put("backPhoto", backFile?.absolutePath ?: "")
-            put("latitude", location?.latitude ?: 0.0)
+            put("frontPhoto", frontFiles.firstOrNull()?.absolutePath ?: "")
+            put("backPhoto",  backFiles.firstOrNull()?.absolutePath  ?: "")
+            put("latitude",  location?.latitude  ?: 0.0)
             put("longitude", location?.longitude ?: 0.0)
             put("address", "")
             put("emailSent", false)
@@ -77,9 +79,9 @@ class IntrusionDetectionService : Service() {
 
         appendLog(log)
 
-        val fromEmail = prefs.getString(KEY_EMAIL, "") ?: ""
-        val appPassword = prefs.getString(KEY_PASSWORD, "") ?: ""
-        val toEmail = prefs.getString(KEY_RECIPIENT, "") ?: ""
+        val fromEmail   = prefs.getString(KEY_EMAIL,     "") ?: ""
+        val appPassword = prefs.getString(KEY_PASSWORD,  "") ?: ""
+        val toEmail     = prefs.getString(KEY_RECIPIENT, "") ?: ""
 
         if (fromEmail.isNotEmpty() && appPassword.isNotEmpty() && toEmail.isNotEmpty()) {
             val dateStr = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
@@ -97,7 +99,7 @@ class IntrusionDetectionService : Service() {
                 |${if (isTest) "\n(This is a test capture)" else ""}
             """.trimMargin()
 
-            val attachments = listOfNotNull(frontFile, backFile)
+            val attachments = frontFiles + backFiles
             val sent = withContext(Dispatchers.IO) {
                 EmailSender.send(
                     fromEmail = fromEmail,

@@ -1,71 +1,195 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
-  Alert,
+  AppState,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { TheftTrack } from '../utils/NativeTheftTrack';
 
 export function SettingsPicturesScreen() {
-  const [testing, setTesting] = useState(false);
+  const [frontShots, setFrontShots] = useState(1);
+  const [backShots, setBackShots] = useState(1);
+  const [watermarkEnabled, setWatermarkEnabled] = useState(true);
 
-  const testCapture = async () => {
-    setTesting(true);
-    try {
-      await TheftTrack.triggerTestCapture();
-      Alert.alert(
-        'Test Triggered',
-        'Capturing photos and location now. Check the Logs tab in a few seconds. An email will be sent if configured.'
-      );
-    } catch {
-      Alert.alert('Error', 'Could not trigger test capture. Make sure camera and location permissions are granted.');
-    } finally {
-      setTesting(false);
-    }
+  const load = useCallback(async () => {
+    const s = await TheftTrack.getSettings();
+    setFrontShots(s.frontShots);
+    setBackShots(s.backShots);
+    setWatermarkEnabled(s.watermarkEnabled);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      load();
+      const sub = AppState.addEventListener('change', state => {
+        if (state === 'active') load();
+      });
+      return () => sub.remove();
+    }, [load])
+  );
+
+  const save = useCallback(
+    (front: number, back: number, watermark: boolean) => {
+      TheftTrack.savePictureSettings(front, back, watermark);
+    },
+    []
+  );
+
+  const changeFront = (delta: number) => {
+    const next = Math.min(5, Math.max(1, frontShots + delta));
+    setFrontShots(next);
+    save(next, backShots, watermarkEnabled);
+  };
+
+  const changeBack = (delta: number) => {
+    const next = Math.min(5, Math.max(1, backShots + delta));
+    setBackShots(next);
+    save(frontShots, next, watermarkEnabled);
+  };
+
+  const toggleWatermark = (val: boolean) => {
+    setWatermarkEnabled(val);
+    save(frontShots, backShots, val);
   };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <Text style={styles.sectionLabel}>CAMERA SHOTS</Text>
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>What gets captured</Text>
-        <Text style={styles.info}>
-          {'• Front-facing camera photo\n• Rear camera photo\n• GPS coordinates (if location is enabled)'}
-        </Text>
+        <ShotRow
+          label="Front Camera"
+          description="Photos taken from the front-facing camera"
+          value={frontShots}
+          onDecrement={() => changeFront(-1)}
+          onIncrement={() => changeFront(1)}
+        />
+        <Separator />
+        <ShotRow
+          label="Back Camera"
+          description="Photos taken from the rear camera"
+          value={backShots}
+          onDecrement={() => changeBack(-1)}
+          onIncrement={() => changeBack(1)}
+        />
       </View>
 
+      <Text style={styles.sectionLabel}>WATERMARK</Text>
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Test Capture</Text>
-        <Text style={styles.hint}>
-          Manually trigger a capture to verify that camera, location, and email are all working correctly.
-        </Text>
-        <TouchableOpacity
-          style={[styles.btn, testing && styles.btnDisabled]}
-          onPress={testCapture}
-          disabled={testing}
-        >
-          <Text style={styles.btnText}>{testing ? 'Triggering…' : 'Test Capture Now'}</Text>
-        </TouchableOpacity>
+        <View style={styles.row}>
+          <View style={styles.rowContent}>
+            <Text style={styles.rowLabel}>Remove Watermark</Text>
+          </View>
+          <Switch
+            value={!watermarkEnabled}
+            onValueChange={val => toggleWatermark(!val)}
+            trackColor={{ false: '#555', true: '#4CAF50' }}
+            thumbColor="#fff"
+          />
+        </View>
       </View>
     </ScrollView>
   );
 }
 
+function ShotRow({
+  label,
+  description,
+  value,
+  onDecrement,
+  onIncrement,
+}: {
+  label: string;
+  description: string;
+  value: number;
+  onDecrement: () => void;
+  onIncrement: () => void;
+}) {
+  return (
+    <View style={styles.row}>
+      <View style={styles.rowContent}>
+        <Text style={styles.rowLabel}>{label}</Text>
+        <Text style={styles.rowDesc}>{description}</Text>
+      </View>
+      <View style={styles.counter}>
+        <TouchableOpacity
+          style={[styles.counterBtn, value <= 1 && styles.counterBtnDisabled]}
+          onPress={onDecrement}
+          disabled={value <= 1}
+          activeOpacity={0.6}
+        >
+          <Text style={styles.counterBtnText}>−</Text>
+        </TouchableOpacity>
+        <Text style={styles.counterValue}>{value}</Text>
+        <TouchableOpacity
+          style={[styles.counterBtn, value >= 5 && styles.counterBtnDisabled]}
+          onPress={onIncrement}
+          disabled={value >= 5}
+          activeOpacity={0.6}
+        >
+          <Text style={styles.counterBtnText}>+</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+function Separator() {
+  return <View style={styles.separator} />;
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#121212' },
   content: { padding: 16, paddingBottom: 48 },
-  card: { backgroundColor: '#1E1E1E', borderRadius: 12, padding: 16, marginBottom: 12 },
-  cardTitle: { color: '#fff', fontSize: 15, fontWeight: '600', marginBottom: 10 },
-  info: { color: '#aaa', fontSize: 14, lineHeight: 24 },
-  hint: { color: '#888', fontSize: 13, lineHeight: 18, marginBottom: 14 },
-  btn: {
-    backgroundColor: '#4A148C',
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: 'center',
+  sectionLabel: {
+    color: '#888',
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 1.5,
+    marginTop: 8,
+    marginBottom: 6,
+    marginLeft: 4,
   },
-  btnDisabled: { opacity: 0.5 },
-  btnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  card: {
+    backgroundColor: '#1E1E1E',
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 24,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  rowContent: { flex: 1, marginRight: 12 },
+  rowLabel: { color: '#fff', fontSize: 15, fontWeight: '500' },
+  rowDesc: { color: '#888', fontSize: 12, marginTop: 2, lineHeight: 17 },
+  counter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  counterBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: '#2C2C2C',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  counterBtnDisabled: { opacity: 0.35 },
+  counterBtnText: { color: '#fff', fontSize: 20, lineHeight: 24 },
+  counterValue: {
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: '600',
+    minWidth: 24,
+    textAlign: 'center',
+  },
+  separator: { height: 1, backgroundColor: '#2C2C2C', marginLeft: 16 },
 });
