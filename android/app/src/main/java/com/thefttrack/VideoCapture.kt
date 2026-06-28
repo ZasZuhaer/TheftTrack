@@ -28,13 +28,17 @@ class VideoCapture(private val context: Context) {
                 .get(CameraCharacteristics.LENS_FACING) == facing
         } ?: return null
 
-        return captureFromCamera(manager, cameraId, durationMs)
+        val sensorOrientation = manager.getCameraCharacteristics(cameraId)
+            .get(CameraCharacteristics.SENSOR_ORIENTATION) ?: 90
+
+        return captureFromCamera(manager, cameraId, durationMs, sensorOrientation)
     }
 
     private suspend fun captureFromCamera(
         manager: CameraManager,
         cameraId: String,
-        durationMs: Long
+        durationMs: Long,
+        orientationHint: Int
     ): File? = suspendCoroutine { cont ->
         val thread = HandlerThread("VideoThread_$cameraId").also { it.start() }
         val handler = Handler(thread.looper)
@@ -65,6 +69,7 @@ class VideoCapture(private val context: Context) {
                 setVideoSize(640, 480)
                 setVideoFrameRate(30)
                 setVideoEncodingBitRate(1_000_000)
+                setOrientationHint(orientationHint)
                 setOutputFile(outputFile.absolutePath)
                 prepare()
             }

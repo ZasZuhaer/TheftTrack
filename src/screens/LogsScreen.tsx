@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
+  Animated,
   FlatList,
   Image,
   Linking,
@@ -23,6 +24,40 @@ function formatDate(ts: number): string {
 }
 
 const PHOTO_STEP = 130; // 120px width + 10px gap
+
+function VideoThumbnail({ path, onPress }: { path: string; onPress: () => void }) {
+  const opacity = useRef(new Animated.Value(0)).current;
+
+  return (
+    <TouchableOpacity style={styles.photoContainer} onPress={onPress} activeOpacity={0.85}>
+      <View style={styles.videoThumbWrapper}>
+        {/* Placeholder visible while video frame is loading */}
+        <View style={[styles.photo, styles.videoThumbBg]} />
+        {/* Video fades in once its first frame is decoded */}
+        <Animated.View style={[StyleSheet.absoluteFill, { opacity }]}>
+          <Video
+            source={{ uri: `file://${path}` }}
+            style={StyleSheet.absoluteFill}
+            resizeMode="cover"
+            paused
+            muted
+            onReadyForDisplay={() =>
+              Animated.timing(opacity, {
+                toValue: 1,
+                duration: 250,
+                useNativeDriver: true,
+              }).start()
+            }
+          />
+        </Animated.View>
+        <View style={styles.videoPlayOverlay}>
+          <Text style={styles.videoPlayIcon}>▶</Text>
+        </View>
+      </View>
+      <Text style={styles.photoLabel}>Video</Text>
+    </TouchableOpacity>
+  );
+}
 
 function LogCard({ log }: { log: IntrusionLog }) {
   const [expanded, setExpanded] = useState(false);
@@ -148,26 +183,11 @@ function LogCard({ log }: { log: IntrusionLog }) {
                       <Text style={styles.photoLabel}>{item.label}</Text>
                     </TouchableOpacity>
                   ) : (
-                    <TouchableOpacity
+                    <VideoThumbnail
                       key={`media_${i}`}
-                      style={styles.photoContainer}
+                      path={item.path}
                       onPress={() => setViewerIndex(i)}
-                      activeOpacity={0.85}
-                    >
-                      <View style={styles.videoThumbWrapper}>
-                        <Video
-                          source={{ uri: `file://${item.path}` }}
-                          style={styles.photo}
-                          resizeMode="cover"
-                          paused
-                          muted
-                        />
-                        <View style={styles.videoPlayOverlay}>
-                          <Text style={styles.videoPlayIcon}>▶</Text>
-                        </View>
-                      </View>
-                      <Text style={styles.photoLabel}>Video</Text>
-                    </TouchableOpacity>
+                    />
                   )
                 )}
               </ScrollView>
@@ -337,6 +357,7 @@ const styles = StyleSheet.create({
   photo: { width: 120, height: 120, borderRadius: 8, backgroundColor: '#333' },
   photoLabel: { color: '#888', fontSize: 11, marginTop: 4 },
   videoThumbWrapper: { width: 120, height: 120, borderRadius: 8, overflow: 'hidden' },
+  videoThumbBg: { backgroundColor: '#2A2A2A' },
   videoPlayOverlay: {
     ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0,0,0,0.35)',

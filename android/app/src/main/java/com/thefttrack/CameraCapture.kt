@@ -12,7 +12,6 @@ import android.graphics.Paint
 import android.graphics.Typeface
 import android.hardware.camera2.*
 import android.graphics.ImageFormat
-import android.media.ExifInterface
 import android.media.ImageReader
 import android.os.Handler
 import android.os.HandlerThread
@@ -56,14 +55,18 @@ class CameraCapture(private val context: Context) {
                 .get(CameraCharacteristics.LENS_FACING) == facing
         } ?: return null
 
-        return captureFromCamera(manager, cameraId, tag, watermarkEnabled)
+        val sensorOrientation = manager.getCameraCharacteristics(cameraId)
+            .get(CameraCharacteristics.SENSOR_ORIENTATION) ?: 90
+
+        return captureFromCamera(manager, cameraId, tag, watermarkEnabled, sensorOrientation)
     }
 
     private suspend fun captureFromCamera(
         manager: CameraManager,
         cameraId: String,
         tag: String,
-        watermarkEnabled: Boolean
+        watermarkEnabled: Boolean,
+        rotationDegrees: Int
     ): File? = suspendCoroutine { cont ->
         val thread = HandlerThread("CameraThread_$tag").also { it.start() }
         val handler = Handler(thread.looper)
@@ -84,7 +87,7 @@ class CameraCapture(private val context: Context) {
             try {
                 val buffer = image.planes[0].buffer
                 val bytes = ByteArray(buffer.remaining()).also { buffer.get(it) }
-                val processed = processImage(bytes, watermarkEnabled)
+                val processed = processImage(bytes, watermarkEnabled, rotationDegrees)
                 val file = File(context.filesDir, "intrusion_${System.currentTimeMillis()}_$tag.jpg")
                 file.writeBytes(processed)
                 finish(file)
@@ -148,23 +151,14 @@ class CameraCapture(private val context: Context) {
         }
     }
 
-    private fun processImage(bytes: ByteArray, watermarkEnabled: Boolean): ByteArray {
+    private fun processImage(bytes: ByteArray, watermarkEnabled: Boolean, rotationDegrees: Int): ByteArray {
         var bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return bytes
 
-        // Bake EXIF rotation into the bitmap so viewers that ignore EXIF show it correctly
-        try {
-            val exif = ExifInterface(bytes.inputStream())
-            val rotation = when (exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
-                ExifInterface.ORIENTATION_ROTATE_90  -> 90f
-                ExifInterface.ORIENTATION_ROTATE_180 -> 180f
-                ExifInterface.ORIENTATION_ROTATE_270 -> 270f
-                else -> 0f
-            }
-            if (rotation != 0f) {
-                bmp = Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height,
-                    Matrix().apply { postRotate(rotation) }, true)
-            }
-        } catch (_: Exception) {}
+        // Rotate using sensor orientation (more reliable than EXIF on Camera2 streams)
+        if (rotationDegrees != 0) {
+            bmp = Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height,
+                Matrix().apply { postRotate(rotationDegrees.toFloat()) }, true)
+        }
 
         if (watermarkEnabled) {
             val mutable = bmp.copy(Bitmap.Config.ARGB_8888, true)
