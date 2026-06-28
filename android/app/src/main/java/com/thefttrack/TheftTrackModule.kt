@@ -5,9 +5,11 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import androidx.core.content.FileProvider
 import com.facebook.react.bridge.*
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.File
 
 class TheftTrackModule(private val reactContext: ReactApplicationContext) :
     ReactContextBaseJavaModule(reactContext) {
@@ -63,6 +65,8 @@ class TheftTrackModule(private val reactContext: ReactApplicationContext) :
             putInt("frontShots", prefs.getInt("front_shots", 1))
             putInt("backShots", prefs.getInt("back_shots", 1))
             putBoolean("watermarkEnabled", prefs.getBoolean("watermark_enabled", true))
+            putBoolean("videoEnabled", prefs.getBoolean("video_enabled", false))
+            putInt("videoDuration", prefs.getInt("video_duration", 5))
         }
         promise.resolve(map)
     }
@@ -73,6 +77,15 @@ class TheftTrackModule(private val reactContext: ReactApplicationContext) :
             .putInt("front_shots", frontShots.coerceIn(1, 5))
             .putInt("back_shots", backShots.coerceIn(1, 5))
             .putBoolean("watermark_enabled", watermarkEnabled)
+            .apply()
+        promise.resolve(true)
+    }
+
+    @ReactMethod
+    fun saveVideoSettings(videoEnabled: Boolean, videoDuration: Int, promise: Promise) {
+        prefs.edit()
+            .putBoolean("video_enabled", videoEnabled)
+            .putInt("video_duration", videoDuration.coerceIn(5, 60))
             .apply()
         promise.resolve(true)
     }
@@ -151,6 +164,7 @@ class TheftTrackModule(private val reactContext: ReactApplicationContext) :
                     putString("address", obj.optString("address"))
                     putBoolean("emailSent", obj.optBoolean("emailSent"))
                     putInt("failedAttempts", obj.optInt("failedAttempts"))
+                    putString("videoPath", obj.optString("videoPath"))
                 })
             }
             promise.resolve(result)
@@ -166,6 +180,26 @@ class TheftTrackModule(private val reactContext: ReactApplicationContext) :
             ?.filter { it.name.startsWith("intrusion_") }
             ?.forEach { it.delete() }
         promise.resolve(true)
+    }
+
+    // ── Video Playback ────────────────────────────────────────────────────────
+
+    @ReactMethod
+    fun openVideoFile(path: String, promise: Promise) {
+        try {
+            val file = File(path)
+            if (!file.exists()) { promise.reject("FILE_NOT_FOUND", "Video file not found"); return }
+            val uri = FileProvider.getUriForFile(reactContext, "${reactContext.packageName}.fileprovider", file)
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, "video/mp4")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            reactContext.startActivity(intent)
+            promise.resolve(true)
+        } catch (e: Exception) {
+            promise.reject("OPEN_ERROR", e.message)
+        }
     }
 
     // ── Test Capture ──────────────────────────────────────────────────────────

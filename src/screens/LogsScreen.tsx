@@ -79,6 +79,11 @@ function LogCard({ log }: { log: IntrusionLog }) {
               <Text style={styles.badgeText}>No Email</Text>
             </View>
           )}
+          {!!log.videoPath && (
+            <View style={[styles.badge, styles.badgeBlue]}>
+              <Text style={styles.badgeText}>Video</Text>
+            </View>
+          )}
           <Text style={styles.chevron}>{expanded ? '▲' : '▼'}</Text>
         </View>
       </TouchableOpacity>
@@ -145,6 +150,16 @@ function LogCard({ log }: { log: IntrusionLog }) {
                 </TouchableOpacity>
               )}
             </View>
+          )}
+
+          {/* Video */}
+          {!!log.videoPath && (
+            <TouchableOpacity
+              style={styles.videoBtn}
+              onPress={() => TheftTrack.openVideoFile(log.videoPath)}
+            >
+              <Text style={styles.videoBtnText}>▶  Play Captured Video</Text>
+            </TouchableOpacity>
           )}
 
           {/* Location */}
@@ -267,6 +282,7 @@ const styles = StyleSheet.create({
   badge: { borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
   badgeGreen: { backgroundColor: '#1B5E20' },
   badgeOrange: { backgroundColor: '#5D4037' },
+  badgeBlue: { backgroundColor: '#0D47A1' },
   badgeText: { color: '#fff', fontSize: 10, fontWeight: '600' },
   chevron: { color: '#666', marginLeft: 8 },
   expanded: { marginTop: 12, borderTopWidth: 1, borderTopColor: '#333', paddingTop: 12 },
@@ -289,6 +305,15 @@ const styles = StyleSheet.create({
   photo: { width: 120, height: 120, borderRadius: 8, backgroundColor: '#333' },
   photoLabel: { color: '#888', fontSize: 11, marginTop: 4 },
   noPhoto: { color: '#666', fontSize: 13 },
+  videoBtn: {
+    backgroundColor: '#1A237E',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginBottom: 12,
+    alignItems: 'center',
+  },
+  videoBtnText: { color: '#90CAF9', fontSize: 13, fontWeight: '600' },
   locationBtn: {
     backgroundColor: '#1565C0',
     borderRadius: 8,

@@ -30,6 +30,7 @@ export const TheftTrack = {
     call(() => mod.getSettings(), {
       email: '', password: '', recipient: '', threshold: 3, enabled: false,
       locationEnabled: false, frontShots: 1, backShots: 1, watermarkEnabled: true,
+      videoEnabled: false, videoDuration: 5,
     }),
 
   setLocationEnabled: (enabled: boolean): Promise<boolean> =>
@@ -37,6 +38,12 @@ export const TheftTrack = {
 
   savePictureSettings: (frontShots: number, backShots: number, watermarkEnabled: boolean): Promise<boolean> =>
     call(() => mod.savePictureSettings(frontShots, backShots, watermarkEnabled), false),
+
+  saveVideoSettings: (videoEnabled: boolean, videoDuration: number): Promise<boolean> =>
+    call(() => mod.saveVideoSettings(videoEnabled, videoDuration), false),
+
+  openVideoFile: (path: string): Promise<boolean> =>
+    call(() => mod.openVideoFile(path), false),
 
   getAppLock: (): Promise<AppLock> =>
     call(() => mod.getAppLock(), { enabled: false, pin: '' }),

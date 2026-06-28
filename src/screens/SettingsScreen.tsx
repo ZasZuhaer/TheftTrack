@@ -20,6 +20,8 @@ type Nav = NativeStackNavigationProp<SettingsStackParamList, 'SettingsList'>;
 export function SettingsScreen() {
   const navigation = useNavigation<Nav>();
   const [locationEnabled, setLocationEnabledState] = useState(false);
+  const [videoEnabled, setVideoEnabledState] = useState(false);
+  const [videoDuration, setVideoDuration] = useState(5);
   const [threshold, setThreshold] = useState(3);
   const [recipient, setRecipient] = useState('');
   const [appLockEnabled, setAppLockEnabled] = useState(false);
@@ -36,6 +38,9 @@ export function SettingsScreen() {
       TheftTrack.getAppLock(),
     ]);
     if (epoch !== loadEpoch.current) return;
+
+    setVideoEnabledState(settings.videoEnabled);
+    setVideoDuration(settings.videoDuration);
 
     let locationEnabled = settings.locationEnabled;
     if (locationEnabled) {
@@ -135,6 +140,12 @@ export function SettingsScreen() {
       <View style={styles.card}>
         <Row title="Pictures" description="Camera shots and watermark" onPress={() => navigation.navigate('Pictures')} />
         <Separator />
+        <Row
+          title="Video"
+          description={videoEnabled ? `${videoDuration}s · Front camera` : 'Disabled'}
+          onPress={() => navigation.navigate('VideoSettings')}
+        />
+        <Separator />
         <ToggleRow
           title="Location"
           description="Record GPS coordinates during detection"
@@ -228,6 +239,7 @@ function ToggleRow({
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#121212' },

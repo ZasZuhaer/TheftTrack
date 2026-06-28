@@ -9,6 +9,7 @@ import { SettingsDeviceAdminScreen } from '../screens/SettingsDeviceAdminScreen'
 import { SettingsManagePermissionsScreen } from '../screens/SettingsManagePermissionsScreen';
 import { SettingsAppLockScreen } from '../screens/SettingsAppLockScreen';
 import { SettingsTestCaptureScreen } from '../screens/SettingsTestCaptureScreen';
+import { SettingsVideoScreen } from '../screens/SettingsVideoScreen';
 
 const Stack = createNativeStackNavigator<SettingsStackParamList>();
 
@@ -30,6 +31,7 @@ export function SettingsNavigator() {
       <Stack.Screen name="ManagePermissions" component={SettingsManagePermissionsScreen} options={{ title: 'Manage Permissions' }} />
       <Stack.Screen name="AppLock" component={SettingsAppLockScreen} options={{ title: 'App Lock' }} />
       <Stack.Screen name="TestCapture" component={SettingsTestCaptureScreen} options={{ title: 'Test Capture' }} />
+      <Stack.Screen name="VideoSettings" component={SettingsVideoScreen} options={{ title: 'Video Capture' }} />
     </Stack.Navigator>
   );
 }

@@ -54,11 +54,17 @@ class IntrusionDetectionService : Service() {
         val frontShots       = prefs.getInt("front_shots", 1).coerceIn(1, 5)
         val backShots        = prefs.getInt("back_shots", 1).coerceIn(1, 5)
         val watermarkEnabled = prefs.getBoolean("watermark_enabled", true)
+        val videoEnabled     = prefs.getBoolean("video_enabled", false)
+        val videoDuration    = prefs.getInt("video_duration", 5).coerceIn(5, 60)
 
         val camera = CameraCapture(this)
         val frontFiles = try { camera.captureMultipleFront(frontShots, watermarkEnabled) } catch (e: Exception) { emptyList() }
         delay(500)
         val backFiles  = try { camera.captureMultipleBack(backShots, watermarkEnabled) } catch (e: Exception) { emptyList() }
+
+        val videoFile = if (videoEnabled) {
+            try { VideoCapture(this).captureFront(videoDuration * 1000L) } catch (e: Exception) { null }
+        } else null
 
         val location = if (locationEnabled) tryGetLocation() else null
 
@@ -70,6 +76,7 @@ class IntrusionDetectionService : Service() {
             put("timestamp", timestamp)
             put("frontPhotos", JSONArray().also { arr -> frontFiles.forEach { arr.put(it.absolutePath) } })
             put("backPhotos",  JSONArray().also { arr -> backFiles.forEach  { arr.put(it.absolutePath) } })
+            put("videoPath", videoFile?.absolutePath ?: "")
             put("latitude",  location?.latitude  ?: 0.0)
             put("longitude", location?.longitude ?: 0.0)
             put("address", "")
@@ -99,7 +106,7 @@ class IntrusionDetectionService : Service() {
                 |${if (isTest) "\n(This is a test capture)" else ""}
             """.trimMargin()
 
-            val attachments = frontFiles + backFiles
+            val attachments = frontFiles + backFiles + listOfNotNull(videoFile)
             val sent = withContext(Dispatchers.IO) {
                 EmailSender.send(
                     fromEmail = fromEmail,

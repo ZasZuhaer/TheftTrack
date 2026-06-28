@@ -3,6 +3,7 @@ export interface IntrusionLog {
   timestamp: number;
   frontPhotos: string[];
   backPhotos: string[];
+  videoPath: string;
   latitude: number;
   longitude: number;
   address: string;
@@ -20,6 +21,8 @@ export interface AppSettings {
   frontShots: number;
   backShots: number;
   watermarkEnabled: boolean;
+  videoEnabled: boolean;
+  videoDuration: number;
 }
 
 export interface AppLock {
@@ -36,4 +39,5 @@ export type SettingsStackParamList = {
   ManagePermissions: undefined;
   AppLock: undefined;
   TestCapture: undefined;
+  VideoSettings: undefined;
 };
