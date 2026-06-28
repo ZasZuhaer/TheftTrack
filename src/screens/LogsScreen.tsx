@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   FlatList,
@@ -11,8 +11,11 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Video from 'react-native-video';
 import { TheftTrack } from '../utils/NativeTheftTrack';
 import type { IntrusionLog } from '../types';
+import { MediaViewerModal } from './MediaViewerModal';
+import type { MediaItem } from './MediaViewerModal';
 
 function formatDate(ts: number): string {
   const d = new Date(ts);
@@ -23,15 +26,29 @@ const PHOTO_STEP = 130; // 120px width + 10px gap
 
 function LogCard({ log }: { log: IntrusionLog }) {
   const [expanded, setExpanded] = useState(false);
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const hasLocation = log.latitude !== 0 || log.longitude !== 0;
-  const totalPhotos = log.frontPhotos.length + log.backPhotos.length;
+
+  const allMedia = useMemo<MediaItem[]>(() => [
+    ...log.frontPhotos.map((path, i) => ({
+      type: 'photo' as const,
+      uri: `file://${path}`,
+      label: log.frontPhotos.length > 1 ? `Front ${i + 1}` : 'Front',
+    })),
+    ...log.backPhotos.map((path, i) => ({
+      type: 'photo' as const,
+      uri: `file://${path}`,
+      label: log.backPhotos.length > 1 ? `Back ${i + 1}` : 'Back',
+    })),
+    ...(log.videoPath ? [{ type: 'video' as const, path: log.videoPath }] : []),
+  ], [log.frontPhotos, log.backPhotos, log.videoPath]);
 
   const scrollRef = useRef<ScrollView>(null);
   const scrollX = useRef(0);
   const containerW = useRef(0);
   const contentW = useRef(0);
   const [showLeft, setShowLeft] = useState(false);
-  const [showRight, setShowRight] = useState(totalPhotos > 1);
+  const [showRight, setShowRight] = useState(allMedia.length > 1);
 
   const updateArrows = (x: number) => {
     setShowLeft(x > 1);
@@ -42,9 +59,9 @@ function LogCard({ log }: { log: IntrusionLog }) {
     if (!expanded) {
       scrollX.current = 0;
       setShowLeft(false);
-      setShowRight(totalPhotos > 1);
+      setShowRight(allMedia.length > 1);
     }
-  }, [expanded, totalPhotos]);
+  }, [expanded, allMedia.length]);
 
   const pressLeft = () => {
     const next = Math.max(0, scrollX.current - PHOTO_STEP);
@@ -54,6 +71,8 @@ function LogCard({ log }: { log: IntrusionLog }) {
   const pressRight = () => {
     scrollRef.current?.scrollTo({ x: scrollX.current + PHOTO_STEP, animated: true });
   };
+
+  const noMedia = allMedia.length === 0;
 
   return (
     <View style={styles.card}>
@@ -69,12 +88,11 @@ function LogCard({ log }: { log: IntrusionLog }) {
           </Text>
         </View>
         <View style={styles.badges}>
-          {log.emailSent && (
+          {log.emailSent ? (
             <View style={[styles.badge, styles.badgeGreen]}>
               <Text style={styles.badgeText}>Email Sent</Text>
             </View>
-          )}
-          {!log.emailSent && (
+          ) : (
             <View style={[styles.badge, styles.badgeOrange]}>
               <Text style={styles.badgeText}>No Email</Text>
             </View>
@@ -90,9 +108,9 @@ function LogCard({ log }: { log: IntrusionLog }) {
 
       {expanded && (
         <View style={styles.expanded}>
-          {/* Photos */}
-          {log.frontPhotos.length === 0 && log.backPhotos.length === 0 ? (
-            <Text style={[styles.noPhoto, { marginBottom: 12 }]}>No photos captured</Text>
+          {/* Media strip */}
+          {noMedia ? (
+            <Text style={[styles.noPhoto, { marginBottom: 12 }]}>No media captured</Text>
           ) : (
             <View style={styles.photoScrollWrapper}>
               <ScrollView
@@ -114,31 +132,46 @@ function LogCard({ log }: { log: IntrusionLog }) {
                   updateArrows(scrollX.current);
                 }}
               >
-                {log.frontPhotos.map((path, i) => (
-                  <View key={`front_${i}`} style={styles.photoContainer}>
-                    <Image
-                      source={{ uri: `file://${path}` }}
-                      style={styles.photo}
-                      resizeMode="cover"
-                    />
-                    <Text style={styles.photoLabel}>
-                      Front{log.frontPhotos.length > 1 ? ` ${i + 1}` : ''}
-                    </Text>
-                  </View>
-                ))}
-                {log.backPhotos.map((path, i) => (
-                  <View key={`back_${i}`} style={styles.photoContainer}>
-                    <Image
-                      source={{ uri: `file://${path}` }}
-                      style={styles.photo}
-                      resizeMode="cover"
-                    />
-                    <Text style={styles.photoLabel}>
-                      Back{log.backPhotos.length > 1 ? ` ${i + 1}` : ''}
-                    </Text>
-                  </View>
-                ))}
+                {allMedia.map((item, i) =>
+                  item.type === 'photo' ? (
+                    <TouchableOpacity
+                      key={`media_${i}`}
+                      style={styles.photoContainer}
+                      onPress={() => setViewerIndex(i)}
+                      activeOpacity={0.85}
+                    >
+                      <Image
+                        source={{ uri: item.uri }}
+                        style={styles.photo}
+                        resizeMode="cover"
+                      />
+                      <Text style={styles.photoLabel}>{item.label}</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity
+                      key={`media_${i}`}
+                      style={styles.photoContainer}
+                      onPress={() => setViewerIndex(i)}
+                      activeOpacity={0.85}
+                    >
+                      <View style={styles.videoThumbWrapper}>
+                        <Video
+                          source={{ uri: `file://${item.path}` }}
+                          style={styles.photo}
+                          resizeMode="cover"
+                          paused
+                          muted
+                        />
+                        <View style={styles.videoPlayOverlay}>
+                          <Text style={styles.videoPlayIcon}>▶</Text>
+                        </View>
+                      </View>
+                      <Text style={styles.photoLabel}>Video</Text>
+                    </TouchableOpacity>
+                  )
+                )}
               </ScrollView>
+
               {showLeft && (
                 <TouchableOpacity style={[styles.scrollBtn, styles.scrollBtnLeft]} onPress={pressLeft}>
                   <Text style={styles.scrollBtnText}>‹</Text>
@@ -150,16 +183,6 @@ function LogCard({ log }: { log: IntrusionLog }) {
                 </TouchableOpacity>
               )}
             </View>
-          )}
-
-          {/* Video */}
-          {!!log.videoPath && (
-            <TouchableOpacity
-              style={styles.videoBtn}
-              onPress={() => TheftTrack.openVideoFile(log.videoPath)}
-            >
-              <Text style={styles.videoBtnText}>▶  Play Captured Video</Text>
-            </TouchableOpacity>
           )}
 
           {/* Location */}
@@ -181,6 +204,15 @@ function LogCard({ log }: { log: IntrusionLog }) {
             <Text style={styles.noLocation}>Location unavailable</Text>
           )}
         </View>
+      )}
+
+      {/* Full-screen media viewer */}
+      {viewerIndex !== null && (
+        <MediaViewerModal
+          items={allMedia}
+          initialIndex={viewerIndex}
+          onClose={() => setViewerIndex(null)}
+        />
       )}
     </View>
   );
@@ -304,16 +336,15 @@ const styles = StyleSheet.create({
   photoContainer: { width: 120, alignItems: 'center' },
   photo: { width: 120, height: 120, borderRadius: 8, backgroundColor: '#333' },
   photoLabel: { color: '#888', fontSize: 11, marginTop: 4 },
-  noPhoto: { color: '#666', fontSize: 13 },
-  videoBtn: {
-    backgroundColor: '#1A237E',
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    marginBottom: 12,
+  videoThumbWrapper: { width: 120, height: 120, borderRadius: 8, overflow: 'hidden' },
+  videoPlayOverlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  videoBtnText: { color: '#90CAF9', fontSize: 13, fontWeight: '600' },
+  videoPlayIcon: { color: '#fff', fontSize: 28 },
+  noPhoto: { color: '#666', fontSize: 13 },
   locationBtn: {
     backgroundColor: '#1565C0',
     borderRadius: 8,
