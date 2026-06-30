@@ -31,6 +31,7 @@ export const TheftTrack = {
       email: '', password: '', recipient: '', threshold: 3, enabled: false,
       locationEnabled: false, frontShots: 1, backShots: 1, watermarkEnabled: true,
       videoEnabled: false, videoDuration: 5,
+      driveUploadPictures: true, driveUploadVideos: true,
     }),
 
   setLocationEnabled: (enabled: boolean): Promise<boolean> =>
@@ -44,6 +45,17 @@ export const TheftTrack = {
 
   openVideoFile: (path: string): Promise<boolean> =>
     call(() => mod.openVideoFile(path), false),
+
+  saveDriveSettings: (uploadPictures: boolean, uploadVideos: boolean): Promise<boolean> =>
+    call(() => mod.saveDriveSettings(uploadPictures, uploadVideos), false),
+
+  uploadToDrive: (
+    accessToken: string,
+    logsJson: string,
+    uploadPictures: boolean,
+    uploadVideos: boolean,
+  ): Promise<boolean> =>
+    call(() => mod.uploadToDrive(accessToken, logsJson, uploadPictures, uploadVideos), false),
 
   getAppLock: (): Promise<AppLock> =>
     call(() => mod.getAppLock(), { enabled: false, pin: '' }),

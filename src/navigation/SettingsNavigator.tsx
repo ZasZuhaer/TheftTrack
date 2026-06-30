@@ -10,6 +10,7 @@ import { SettingsManagePermissionsScreen } from '../screens/SettingsManagePermis
 import { SettingsAppLockScreen } from '../screens/SettingsAppLockScreen';
 import { SettingsTestCaptureScreen } from '../screens/SettingsTestCaptureScreen';
 import { SettingsVideoScreen } from '../screens/SettingsVideoScreen';
+import { SettingsGoogleDriveScreen } from '../screens/SettingsGoogleDriveScreen';
 
 const Stack = createNativeStackNavigator<SettingsStackParamList>();
 
@@ -32,6 +33,7 @@ export function SettingsNavigator() {
       <Stack.Screen name="AppLock" component={SettingsAppLockScreen} options={{ title: 'App Lock' }} />
       <Stack.Screen name="TestCapture" component={SettingsTestCaptureScreen} options={{ title: 'Test Capture' }} />
       <Stack.Screen name="VideoSettings" component={SettingsVideoScreen} options={{ title: 'Video Capture' }} />
+      <Stack.Screen name="GoogleDrive" component={SettingsGoogleDriveScreen} options={{ title: 'Google Drive' }} />
     </Stack.Navigator>
   );
 }

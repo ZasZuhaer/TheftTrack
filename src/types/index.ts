@@ -23,6 +23,8 @@ export interface AppSettings {
   watermarkEnabled: boolean;
   videoEnabled: boolean;
   videoDuration: number;
+  driveUploadPictures: boolean;
+  driveUploadVideos: boolean;
 }
 
 export interface AppLock {
@@ -40,4 +42,5 @@ export type SettingsStackParamList = {
   AppLock: undefined;
   TestCapture: undefined;
   VideoSettings: undefined;
+  GoogleDrive: undefined;
 };

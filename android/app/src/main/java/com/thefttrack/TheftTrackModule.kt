@@ -7,6 +7,9 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.content.FileProvider
 import com.facebook.react.bridge.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -67,8 +70,37 @@ class TheftTrackModule(private val reactContext: ReactApplicationContext) :
             putBoolean("watermarkEnabled", prefs.getBoolean("watermark_enabled", true))
             putBoolean("videoEnabled", prefs.getBoolean("video_enabled", false))
             putInt("videoDuration", prefs.getInt("video_duration", 5))
+            putBoolean("driveUploadPictures", prefs.getBoolean("drive_upload_pictures", true))
+            putBoolean("driveUploadVideos", prefs.getBoolean("drive_upload_videos", true))
         }
         promise.resolve(map)
+    }
+
+    @ReactMethod
+    fun saveDriveSettings(uploadPictures: Boolean, uploadVideos: Boolean, promise: Promise) {
+        prefs.edit()
+            .putBoolean("drive_upload_pictures", uploadPictures)
+            .putBoolean("drive_upload_videos", uploadVideos)
+            .apply()
+        promise.resolve(true)
+    }
+
+    @ReactMethod
+    fun uploadToDrive(
+        accessToken: String,
+        logsJson: String,
+        uploadPictures: Boolean,
+        uploadVideos: Boolean,
+        promise: Promise
+    ) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                DriveUploader(accessToken).upload(logsJson, uploadPictures, uploadVideos)
+                promise.resolve(true)
+            } catch (e: Exception) {
+                promise.reject("DRIVE_UPLOAD_ERROR", e.message ?: "Upload failed")
+            }
+        }
     }
 
     @ReactMethod

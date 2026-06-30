@@ -134,6 +134,8 @@ export function SettingsScreen() {
         <Row title="Failed Attempts" description={thresholdDesc} onPress={() => navigation.navigate('FailedAttempts')} />
         <Separator />
         <Row title="Email" description={emailDesc} onPress={() => navigation.navigate('Email')} />
+        <Separator />
+        <Row title="Google Drive" description="Back up media to Google Drive" onPress={() => navigation.navigate('GoogleDrive')} />
       </View>
 
       <SectionHeader title="Actions" />
