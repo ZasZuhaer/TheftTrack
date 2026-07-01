@@ -1,10 +1,18 @@
 package com.thefttrack
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import com.facebook.react.bridge.*
 import kotlinx.coroutines.CoroutineScope
@@ -94,13 +102,72 @@ class TheftTrackModule(private val reactContext: ReactApplicationContext) :
         promise: Promise
     ) {
         CoroutineScope(Dispatchers.IO).launch {
+            driveNotify("Uploading media to Google Drive…", ongoing = true)
             try {
                 DriveUploader(accessToken).upload(logsJson, uploadPictures, uploadVideos)
+                driveNotify("Backup complete", ongoing = false)
+                Handler(Looper.getMainLooper()).postDelayed({ cancelDriveNotification() }, 5_000L)
                 promise.resolve(true)
             } catch (e: Exception) {
+                driveNotify("Backup failed: ${e.message ?: "unknown error"}", ongoing = false, isError = true)
                 promise.reject("DRIVE_UPLOAD_ERROR", e.message ?: "Upload failed")
             }
         }
+    }
+
+    // ── Drive notification helpers ────────────────────────────────────────────
+
+    private companion object {
+        const val DRIVE_CHANNEL_ID = "drive_upload"
+        const val DRIVE_NOTIF_ID   = 2001
+    }
+
+    private fun ensureDriveChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val nm = reactContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            if (nm.getNotificationChannel(DRIVE_CHANNEL_ID) == null) {
+                nm.createNotificationChannel(
+                    NotificationChannel(
+                        DRIVE_CHANNEL_ID,
+                        "Google Drive Backup",
+                        NotificationManager.IMPORTANCE_LOW
+                    ).apply { description = "Progress for Drive media backup" }
+                )
+            }
+        }
+    }
+
+    private fun canPostNotifications(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return true
+        return ContextCompat.checkSelfPermission(
+            reactContext, android.Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun driveNotify(message: String, ongoing: Boolean, isError: Boolean = false) {
+        if (!canPostNotifications()) return
+        ensureDriveChannel()
+        val icon = when {
+            isError  -> android.R.drawable.stat_notify_error
+            ongoing  -> android.R.drawable.stat_sys_upload
+            else     -> android.R.drawable.stat_sys_upload_done
+        }
+        val notif = NotificationCompat.Builder(reactContext, DRIVE_CHANNEL_ID)
+            .setSmallIcon(icon)
+            .setContentTitle("TheftTrack · Google Drive")
+            .setContentText(message)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(ongoing)
+            .setAutoCancel(!ongoing)
+            .apply { if (ongoing) setProgress(0, 0, true) }
+            .build()
+        try {
+            NotificationManagerCompat.from(reactContext).notify(DRIVE_NOTIF_ID, notif)
+        } catch (_: SecurityException) {}
+    }
+
+    private fun cancelDriveNotification() {
+        NotificationManagerCompat.from(reactContext).cancel(DRIVE_NOTIF_ID)
     }
 
     @ReactMethod

@@ -66,8 +66,21 @@ class DriveUploader(private val accessToken: String) {
         return JSONObject(createJson).getString("id")
     }
 
+    private fun fileExistsInFolder(fileName: String, parentId: String): Boolean {
+        val q = URLEncoder.encode(
+            "name='$fileName' and '$parentId' in parents and trashed=false",
+            "UTF-8"
+        )
+        val conn = get("https://www.googleapis.com/drive/v3/files?q=$q&fields=files(id)")
+        val json = readBody(conn)
+        conn.disconnect()
+        val files = JSONObject(json).optJSONArray("files")
+        return files != null && files.length() > 0
+    }
+
     private fun uploadFile(file: File, mimeType: String, parentId: String) {
         if (!file.exists()) return
+        if (fileExistsInFolder(file.name, parentId)) return
 
         // Step 1 — initiate resumable upload session
         val metadata = JSONObject().apply {

@@ -12,18 +12,21 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { TheftTrack } from '../utils/NativeTheftTrack';
 import * as DriveService from '../utils/GoogleDriveService';
+import * as DriveUploadManager from '../utils/DriveUploadManager';
 
 export function SettingsGoogleDriveScreen() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [uploadPictures, setUploadPictures] = useState(true);
   const [uploadVideos, setUploadVideos] = useState(true);
   const [isSigningIn, setIsSigningIn] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [statusMsg, setStatusMsg] = useState<string | null>(null);
-  const [statusIsError, setStatusIsError] = useState(false);
+
+  // Upload state is sourced from the module-level manager so it persists
+  // across navigation and can also be shown app-wide via DriveUploadBanner.
+  const [uploadState, setUploadState] = useState(DriveUploadManager.getState);
 
   useEffect(() => {
     DriveService.configure();
+    return DriveUploadManager.subscribe(setUploadState);
   }, []);
 
   useFocusEffect(
@@ -41,7 +44,7 @@ export function SettingsGoogleDriveScreen() {
     if (!DriveService.isConfigured()) {
       Alert.alert(
         'Setup Required',
-        'Set your Google Web Client ID in src/utils/GoogleDriveService.ts before signing in. See the comment at the top of that file for instructions.'
+        'Set your Google Web Client ID in src/utils/GoogleDriveService.ts before signing in.'
       );
       return;
     }
@@ -69,7 +72,7 @@ export function SettingsGoogleDriveScreen() {
           try {
             await DriveService.signOut();
             setUserEmail(null);
-            setStatusMsg(null);
+            DriveUploadManager.dismiss();
           } catch (e: any) {
             Alert.alert('Error', e.message ?? 'Could not sign out.');
           }
@@ -78,45 +81,24 @@ export function SettingsGoogleDriveScreen() {
     ]);
   };
 
-  const togglePictures = async (val: boolean) => {
+  const togglePictures = (val: boolean) => {
     setUploadPictures(val);
     TheftTrack.saveDriveSettings(val, uploadVideos);
   };
 
-  const toggleVideos = async (val: boolean) => {
+  const toggleVideos = (val: boolean) => {
     setUploadVideos(val);
     TheftTrack.saveDriveSettings(uploadPictures, val);
   };
 
-  const handleUpload = async () => {
-    if (!uploadPictures && !uploadVideos) {
-      Alert.alert('Nothing Selected', 'Enable Pictures or Videos to upload.');
-      return;
-    }
-    setIsUploading(true);
-    setStatusMsg('Preparing…');
-    setStatusIsError(false);
-    try {
-      const accessToken = await DriveService.getAccessToken();
-      const logs = await TheftTrack.getIntrusionLogs();
-      if (logs.length === 0) {
-        setStatusMsg(null);
-        Alert.alert('No Logs', 'There are no intrusion logs to upload.');
-        return;
-      }
-      setStatusMsg(`Uploading ${logs.length} intrusion${logs.length !== 1 ? 's' : ''}…`);
-      await TheftTrack.uploadToDrive(accessToken, JSON.stringify(logs), uploadPictures, uploadVideos);
-      const now = new Date().toLocaleString();
-      setStatusMsg(`Upload complete · ${now}`);
-    } catch (e: any) {
-      setStatusIsError(true);
-      setStatusMsg(e.message ?? 'Upload failed.');
-    } finally {
-      setIsUploading(false);
-    }
+  // Delegates to the persistent manager — the upload continues even if the
+  // user navigates away from this screen.
+  const handleUpload = () => {
+    DriveUploadManager.start(uploadPictures, uploadVideos);
   };
 
   const signedIn = userEmail !== null;
+  const { isUploading, statusMsg, statusIsError } = uploadState;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -205,7 +187,8 @@ export function SettingsGoogleDriveScreen() {
         <Text style={styles.infoTitle}>How it works</Text>
         <Text style={styles.infoText}>
           Files are organised in your Google Drive under{' '}
-          <Text style={styles.infoMono}>TheftTrack Backups</Text>. Each intrusion gets its own folder. Only files created by this app are accessible — no other Drive content is touched.
+          <Text style={styles.infoMono}>TheftTrack Backups</Text>. Each intrusion gets its own
+          folder. Only files created by this app are accessible — no other Drive content is touched.
         </Text>
       </View>
 
@@ -260,19 +243,9 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     marginLeft: 4,
   },
-  card: {
-    backgroundColor: '#1E1E1E',
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
+  card: { backgroundColor: '#1E1E1E', borderRadius: 12, overflow: 'hidden' },
 
-  // Signed-in account row
-  accountRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 14,
-    gap: 12,
-  },
+  accountRow: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 12 },
   avatar: {
     width: 40,
     height: 40,
@@ -287,31 +260,18 @@ const styles = StyleSheet.create({
   accountSub: { color: '#4CAF50', fontSize: 12, marginTop: 2 },
   signOutText: { color: '#F44336', fontSize: 13, fontWeight: '600' },
 
-  // Sign-in card
   signInCard: { padding: 20 },
   signInTitle: { color: '#fff', fontSize: 15, fontWeight: '600', marginBottom: 6 },
   signInSub: { color: '#888', fontSize: 13, lineHeight: 19, marginBottom: 20 },
-  signInBtn: {
-    backgroundColor: '#1A73E8',
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
+  signInBtn: { backgroundColor: '#1A73E8', borderRadius: 8, paddingVertical: 12, alignItems: 'center' },
   signInBtnText: { color: '#fff', fontSize: 14, fontWeight: '600' },
 
-  // Toggle rows
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
+  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 },
   rowContent: { flex: 1, marginRight: 8 },
   rowTitle: { color: '#fff', fontSize: 15 },
   rowDesc: { color: '#888', fontSize: 12, marginTop: 2 },
   separator: { height: 1, backgroundColor: '#2C2C2C', marginLeft: 16 },
 
-  // Upload button
   uploadBtn: {
     backgroundColor: '#1A73E8',
     borderRadius: 10,
@@ -320,13 +280,11 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   uploadBtnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
-
   btnDisabled: { opacity: 0.5 },
 
   statusText: { color: '#aaa', fontSize: 12, textAlign: 'center', marginTop: 10 },
   statusError: { color: '#F44336' },
 
-  // Info card
   infoCard: {
     backgroundColor: '#1A1A2E',
     borderRadius: 12,
