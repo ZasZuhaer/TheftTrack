@@ -20,8 +20,21 @@ export function AppNavigator() {
         tabBarStyle: {
           backgroundColor: '#1A1A1A',
           borderTopColor: '#333',
+          height: 56,
+          paddingTop: 0,
+          paddingBottom: 0,
         },
         tabBarShowLabel: false,
+        tabBarIconStyle: {
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+        },
+        tabBarItemStyle: {
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+        },
         tabBarActiveTintColor: ACTIVE,
         tabBarInactiveTintColor: INACTIVE,
       }}
