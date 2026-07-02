@@ -235,13 +235,15 @@ function OptionalStep({
               Records where an intrusion happened so you can track your device
             </Text>
           </View>
-          {locationGranted ? (
-            <SmallGrantedBadge />
-          ) : (
-            <TouchableOpacity style={styles.allowBtn} onPress={onRequestLocation} activeOpacity={0.8}>
-              <Text style={styles.allowBtnText}>Allow</Text>
-            </TouchableOpacity>
-          )}
+          <View style={styles.optCardAction}>
+            {locationGranted ? (
+              <SmallGrantedBadge />
+            ) : (
+              <TouchableOpacity style={styles.allowBtn} onPress={onRequestLocation} activeOpacity={0.8}>
+                <Text style={styles.allowBtnText}>Allow</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </Animated.View>
 
         {NEEDS_NOTIF && (
@@ -255,21 +257,37 @@ function OptionalStep({
                 Enable app notifications
               </Text>
             </View>
-            {notifGranted ? (
-              <SmallGrantedBadge />
-            ) : (
-              <TouchableOpacity style={styles.allowBtn} onPress={onRequestNotif} activeOpacity={0.8}>
-                <Text style={styles.allowBtnText}>Allow</Text>
-              </TouchableOpacity>
-            )}
+            <View style={styles.optCardAction}>
+              {notifGranted ? (
+                <SmallGrantedBadge />
+              ) : (
+                <TouchableOpacity style={styles.allowBtn} onPress={onRequestNotif} activeOpacity={0.8}>
+                  <Text style={styles.allowBtnText}>Allow</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </Animated.View>
         )}
       </View>
 
       <Animated.View style={[styles.btnArea, ae(a[btnIndex])]}>
-        <PrimaryButton label="Finish Setup" onPress={onDone} />
-        <TouchableOpacity onPress={onDone} activeOpacity={0.7} style={styles.skipBtn}>
-          <Text style={styles.skipText}>Skip for now</Text>
+        <PrimaryButton
+          label="Finish Setup"
+          onPress={onDone}
+          disabled={!locationGranted || (NEEDS_NOTIF && !notifGranted)}
+        />
+        <TouchableOpacity
+          onPress={onDone}
+          activeOpacity={0.7}
+          style={styles.skipBtn}
+          disabled={locationGranted && (!NEEDS_NOTIF || notifGranted)}
+        >
+          <Text style={[
+            styles.skipText,
+            locationGranted && (!NEEDS_NOTIF || notifGranted) && { opacity: 0 },
+          ]}>
+            Skip for now
+          </Text>
         </TouchableOpacity>
       </Animated.View>
     </View>
@@ -497,6 +515,11 @@ const styles = StyleSheet.create({
   },
   optCardIconText: { fontSize: 20 },
   optCardBody: { flex: 1 },
+  optCardAction: {
+    width: 62,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   optCardTitle: {
     color: '#fff',
     fontSize: 14,
