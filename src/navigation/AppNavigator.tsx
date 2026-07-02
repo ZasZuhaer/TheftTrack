@@ -1,15 +1,14 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text } from 'react-native';
 import { HomeScreen } from '../screens/HomeScreen';
 import { LogsScreen } from '../screens/LogsScreen';
 import { SettingsNavigator } from './SettingsNavigator';
+import { HomeIcon, LogsIcon, SettingsIcon } from '../components/NavIcons';
 
 const Tab = createBottomTabNavigator();
 
-function TabIcon({ icon, focused }: { icon: string; focused: boolean }) {
-  return <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.5 }}>{icon}</Text>;
-}
+const ACTIVE = '#4FC3F7';
+const INACTIVE = '#555';
 
 export function AppNavigator() {
   return (
@@ -22,8 +21,9 @@ export function AppNavigator() {
           backgroundColor: '#1A1A1A',
           borderTopColor: '#333',
         },
-        tabBarActiveTintColor: '#4FC3F7',
-        tabBarInactiveTintColor: '#666',
+        tabBarShowLabel: false,
+        tabBarActiveTintColor: ACTIVE,
+        tabBarInactiveTintColor: INACTIVE,
       }}
     >
       <Tab.Screen
@@ -31,8 +31,9 @@ export function AppNavigator() {
         component={HomeScreen}
         options={{
           title: 'TheftTrack',
-          tabBarLabel: 'Home',
-          tabBarIcon: ({ focused }) => <TabIcon icon="🛡️" focused={focused} />,
+          tabBarIcon: ({ focused }) => (
+            <HomeIcon color={focused ? ACTIVE : INACTIVE} size={24} />
+          ),
         }}
       />
       <Tab.Screen
@@ -40,8 +41,9 @@ export function AppNavigator() {
         component={LogsScreen}
         options={{
           title: 'Intrusion Logs',
-          tabBarLabel: 'Logs',
-          tabBarIcon: ({ focused }) => <TabIcon icon="📋" focused={focused} />,
+          tabBarIcon: ({ focused }) => (
+            <LogsIcon color={focused ? ACTIVE : INACTIVE} size={24} />
+          ),
         }}
       />
       <Tab.Screen
@@ -49,8 +51,9 @@ export function AppNavigator() {
         component={SettingsNavigator}
         options={{
           headerShown: false,
-          tabBarLabel: 'Settings',
-          tabBarIcon: ({ focused }) => <TabIcon icon="⚙️" focused={focused} />,
+          tabBarIcon: ({ focused }) => (
+            <SettingsIcon color={focused ? ACTIVE : INACTIVE} size={24} />
+          ),
         }}
       />
     </Tab.Navigator>
